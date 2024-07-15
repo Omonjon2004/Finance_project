@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %} Transfer History {% endblock %}
+
+{% block body %}
+<div class="container">
+    <h3>Transfer History</h3>
+    <form method="post">
+        <div class="form-group">
+            <label for="year">Year</label>
+            {{ form.year(class="form-control") }}
+        </div>
+        <div class="form-group">
+            <label for="month">Month</label>
+            {{ form.month(class="form-control") }}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+
+    {% if kirim or chiqim %}
+    <h4>Kirim</h4>
+    <ul>
+        {% for transfer in kirim %}
+        <li>Amount: {{ transfer.balance }} - From: {{ transfer.sender_card }} - Date: {{ transfer.transfer_time }}</li>
+        {% endfor %}
+    </ul>
+
+    <h4>Chiqim</h4>
+    <ul>
+        {% for transfer in chiqim %}
+        <li>Amount: {{ transfer.balance }} - To: {{ transfer.recipient_card }} - Date: {{ transfer.transfer_time }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No transfers found for the selected period.</p>
+    {% endif %}
+
+    <a href="{{ url_for('user_menu') }}" class="btn btn-secondary mt-3">Exit</a>
+</div>
+{% endblock %}
