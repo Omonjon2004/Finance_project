@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask_wtf import FlaskForm
 from wtforms.fields.choices import SelectField
+from wtforms.fields.datetime import DateField, DateTimeField
 from wtforms.fields.numeric import FloatField, IntegerField
 from wtforms.fields.simple import StringField, SubmitField, PasswordField
 from wtforms.validators import DataRequired, Length, ValidationError, EqualTo, Email, NumberRange
@@ -35,7 +36,7 @@ class LoginForm(FlaskForm):
     def validate_email(self, email):
         user = Users.query.filter_by(email=email.data).first()
         if user is None:
-            raise ValidationError('This email is already in use.')
+            raise ValidationError('Invalid email')
 
 
 class TransferForm(FlaskForm):
@@ -52,14 +53,13 @@ class TransferForm(FlaskForm):
         if not recipient:
             raise ValidationError('This recipient card is unavailable.')
 
-class TransferHistoryForm(FlaskForm):
-    year = IntegerField('Year', validators=[DataRequired(), NumberRange(min=1900, max=2100)])
-    month = IntegerField('Month', validators=[DataRequired(), NumberRange(min=1, max=12)])
-    submit = SubmitField('Submit')
-
-
-
-
 class ConfirmDeleteForm(FlaskForm):
     confirm = SubmitField('Delete Account')
     cancel = SubmitField('Cancel')
+
+
+class TransferHistoryForm(FlaskForm):
+    start_date = DateField('Start Date', format='%m/%d/%Y', validators=[DataRequired()])
+    end_date = DateField('End Date', format='%m/%d/%Y', validators=[DataRequired()])
+    submit = SubmitField('Show History')
+

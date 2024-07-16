@@ -2,18 +2,20 @@ from operator import or_, and_
 
 from app import app, bcrypt, db
 from flask import render_template, flash, redirect, url_for, request, session
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.decarators import login_required
 from app.forms import RegistrationForm, LoginForm, TransferForm, TransferHistoryForm, ConfirmDeleteForm
 from app.models import Users, Transfer
 
-@login_required(required=False)
+
 @app.route('/')
+@login_required(required=False)
 def home():
     return render_template("home.html")
 
-@login_required(required=True)
+
 @app.route('/user_menu')
+@login_required(required=True)
 def user_menu():
     return render_template('user_menu/user_menu.html')
 
@@ -30,8 +32,9 @@ def logout():
     flash(f"{name} user successfully logged out", "success")
     return redirect(url_for("home"))
 
-@login_required(required=True)
+
 @app.route('/show_balance', methods=['GET', 'POST'])
+@login_required(required=True)
 def show_balance():
     user = Users.query.filter_by(id=session['id']).first()
     if request.method == 'GET':
@@ -39,8 +42,9 @@ def show_balance():
     elif request.method == 'POST':
         return redirect(url_for('user_menu'))
 
-@login_required(required=True)
+
 @app.route('/login', methods=['GET', 'POST'])
+# @login_required(required=True)
 def login():
     form = LoginForm()
     if request.method == 'POST':
@@ -59,8 +63,9 @@ def login():
                 return redirect(url_for('login'))
     return render_template('auth/login.html', form=form)
 
-@login_required(required=True)
+
 @app.route('/delete', methods=['GET', 'POST'])
+@login_required(required=True)
 def delete():
     form = ConfirmDeleteForm()
 
@@ -79,8 +84,9 @@ def delete():
 
 
 
-@login_required(required=False)
+
 @app.route('/register', methods=['GET', 'POST'])
+@login_required(required=False)
 def register():
     form = RegistrationForm()
     if request.method == 'POST':
@@ -104,8 +110,9 @@ def register():
 
 
 
-@login_required(required=True)
+
 @app.route('/add_balance', methods=['GET', 'POST'])
+@login_required(required=True)
 def add_balance():
     user = Users.query.filter_by(id=session['id']).first()
     if request.method == 'GET':
@@ -114,15 +121,16 @@ def add_balance():
         num = request.form.get('num')
         num = int(num)
         if num < 0:
-            flash('Please enter a positive number', 'info')
+            flash('Please enter a positive number', 'danger')
         elif num:
             user.card_balance += num
             db.session.commit()
             flash('Balance successfully added!', 'success')
         return redirect(url_for('user_menu'))
 
-@login_required(required=True)
+
 @app.route('/transfer_money', methods=['GET', 'POST'])
+@login_required(required=True)
 def transfer_money():
     transfer = TransferForm()
     recipient = None
@@ -175,36 +183,38 @@ def transfer_money():
 @app.route("/transfer_history", methods=["GET", "POST"])
 @login_required(required=True)
 def transfer_history():
-    form = TransferHistoryForm()
-    user_id = session.get('id')
-    user = Users.query.get(user_id)
+    kirim = []
+    chiqim = []
 
-    if form.validate_on_submit():
-        year = int(form.year.data)
-        month = int(form.month.data)
+    if request.method == 'POST':
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
 
-        start_date = datetime(year, month, 1)
-        if month == 12:
-            end_date = datetime(year + 1, 1, 1)
-        else:
-            end_date = datetime(year, month + 1, 1)
+        if start_date_str and end_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1)
 
-        transfers = Transfer.query.filter(
-            or_(
-                Transfer.sender_card == user.card_number,
-                Transfer.recipient_card == user.card_number
-            ),
-            and_(
-                Transfer.transfer_time >= start_date,
-                Transfer.transfer_time < end_date
-            )
-        ).all()
+            user_id = session.get('id')
+            user = Users.query.get(user_id)
 
-        kirim = [t for t in transfers if t.recipient_card == user.card_number]
-        chiqim = [t for t in transfers if t.sender_card == user.card_number]
+            transfers = Transfer.query.filter(
+                or_(
+                    Transfer.sender_card == user.card_number,
+                    Transfer.recipient_card == user.card_number
+                ),
+                and_(
+                    Transfer.transfer_time >= start_date,
+                    Transfer.transfer_time < end_date
+                )
+            ).all()
 
-        return render_template("user_menu/transfer_history.html", kirim=kirim, chiqim=chiqim, form=form)
+            kirim = [t for t in transfers if t.recipient_card == user.card_number]
+            chiqim = [t for t in transfers if t.sender_card == user.card_number]
 
-    return render_template("user_menu/transfer_history.html", form=form)
+            return render_template("user_menu/transfer_history.html", kirim=kirim, chiqim=chiqim)
+
+    return render_template("user_menu/transfer_history.html")
+
+
 
 

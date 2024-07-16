@@ -1,3 +1,5 @@
+from sqlalchemy import func
+
 from . import db
 
 class Users(db.Model):
@@ -17,4 +19,4 @@ class Transfer(db.Model):
     sender_card = db.Column(db.String(50), db.ForeignKey('users.card_number'), nullable=False)
     recipient_card = db.Column(db.String(50), db.ForeignKey('users.card_number'), nullable=False)
     balance = db.Column(db.Float, nullable=False)
-    transfer_time = db.Column(db.TIMESTAMP, nullable=False, default=db.func.current_timestamp())
+    transfer_time = db.Column(db.DateTime, nullable=False,default=func.now())
